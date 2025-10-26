@@ -1,0 +1,9 @@
+{
+    "name": "holkerveen/diy-php-framework",
+    "autoload": {
+        "psr-4": {
+            "Holkerveen\\DiyPhpFramework\\": "src/"
+        }
+    },
+    "require": {}
+}
