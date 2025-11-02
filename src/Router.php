@@ -3,16 +3,43 @@
 
 namespace Framework;
 
+use Framework\Attributes\Route;
+use ReflectionClass;
+use ReflectionMethod;
+
 class Router
 {
+    private array $routes = [];
+
+    public function __construct()
+    {
+        $controllerFiles = glob(__DIR__ . '/Controllers/*.php');
+
+        foreach ($controllerFiles as $file) {
+            $className = 'Framework\\Controllers\\' . basename($file, '.php');
+
+            foreach (new ReflectionClass($className)->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+                $attributes = $method->getAttributes(Route::class);
+
+                foreach ($attributes as $attribute) {
+                    $route = $attribute->newInstance();
+
+                    $this->routes[$route->path] = [
+                        'controller' => $className,
+                        'method' => $method->getName(),
+                    ];
+                }
+            }
+        }
+    }
+
     public function getController(string $path): callable
     {
-        $home = fn() => "Hello World!";
-        $test = fn() => "Test route";
+        $route = $this->routes[$path];
 
-        return match ($path) {
-            '/' => $home,
-            '/test' => $test,
+        return function () use ($route) {
+            $controller = new $route['controller']();
+            return $controller->{$route['method']}();
         };
     }
 }
