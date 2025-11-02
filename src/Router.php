@@ -3,6 +3,7 @@
 
 namespace Framework;
 
+use Closure;
 use Framework\Attributes\Route;
 use ReflectionClass;
 use ReflectionMethod;
@@ -33,14 +34,10 @@ class Router
         }
     }
 
-    public function getController(string $path): callable
+    public function getController(string $path): Closure
     {
         $route = $this->routes[$path];
-
-        return function () use ($route) {
-            $controller = new $route['controller']();
-            return $controller->{$route['method']}();
-        };
+        return Closure::fromCallable([new $route['controller'](), $route['method']]);
     }
 }
 
