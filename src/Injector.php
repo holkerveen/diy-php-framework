@@ -1,0 +1,49 @@
+<?php
+// src/Injector.php
+
+namespace Framework;
+
+use Closure;
+use Exception;
+use Psr\Container\ContainerInterface;
+use ReflectionFunction;
+use ReflectionNamedType;
+
+readonly class Injector
+{
+    public function __construct(private ContainerInterface $container)
+    {
+    }
+
+    public function call(Closure $closure, array $extraParams = []): mixed
+    {
+        $reflection = new ReflectionFunction($closure);
+        return $reflection->invokeArgs(
+            $this->getDependencies(
+                $reflection->getParameters(),
+                $extraParams,
+            )
+        );
+    }
+
+    private function getDependencies(array $parameters, array $extraParams): array
+    {
+        $dependencies = [];
+
+        foreach ($parameters as $parameter) {
+            if (!$parameter->getType() instanceof ReflectionNamedType) {
+                $dependencies[] = $extraParams[$parameter->getName()] ?? null;
+                continue;
+            }
+
+            if ($parameter->getType()->isBuiltin()) {
+                $dependencies[] = $extraParams[$parameter->getName()] ?? null;
+                continue;
+            }
+
+            $dependencies[] = $this->container->get($parameter->getType()->getName());
+        }
+
+        return $dependencies;
+    }
+}
